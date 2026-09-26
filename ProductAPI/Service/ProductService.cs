@@ -9,20 +9,26 @@ namespace ProductAPI.Service
         public bool AddProduct(Product product);
         public bool DeleteProduct(int Id);
         public bool EditProduct(int Id, Product product);
+        public Product? GetProductId(int Id);
     }
     public class ProductService : IProductService
     {
+        public Product? GetProductId(int Id)
+        {
+            return Products.FirstOrDefault(x => x.Id == Id);
+        }
         public ValidationResult ProductValidate(Product product)
         {
-            if (product == null) return new ValidationResult("Объект пустой");
+            if (string.IsNullOrWhiteSpace(product.Name)) return new ValidationResult("Имя не должно быть пустым");
+            //  if (product == null) return new ValidationResult("Объект пустой");
             if (product.Price <= 0)
             {
                 return new ValidationResult("Цена должа быть больше нуля");
 
             }
-            if (product.Stock <= 0)
+            if (product.Stock < 0)
             {
-                return new ValidationResult("Количество на складе должно быть больше нуля");
+                return new ValidationResult("Количество на складе не должно быть отрицательным");
             }
             else
             {
@@ -60,13 +66,13 @@ namespace ProductAPI.Service
             var ProductEdit = Products.Where(p => p.Id == Id).FirstOrDefault();
             if (ProductEdit != null && ProductValidate(product) == ValidationResult.Success)
             {
-                ProductService.Products[Id] = product;
+                ProductEdit = product;
                 return true;
             }
             return false;
         }
 
-        public static List<Product> Products { get; set; } = new()
+        public List<Product> Products { get; set; } = new()
         {
                      new Product
                 {

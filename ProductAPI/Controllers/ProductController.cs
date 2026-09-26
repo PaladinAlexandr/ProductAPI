@@ -16,26 +16,26 @@ namespace ProductAPI.Controllers
             this.productService = productService;
         }
 
-        [HttpGet("/products")]
+        [HttpGet("api/products")]
         public IEnumerable<Product> Get()
         {
-            return ProductService.Products;
+            return productService.GetProducts();
         }
 
-        [HttpGet("/product/{Id}")]
+        [HttpGet("api/products/{Id}")]
         public Product? Get(int Id)
         {
-            return ProductService.Products.Where(p => p.Id == Id).FirstOrDefault();
+            return productService.GetProductId(Id);
         }
         [HttpPost(Name = "PostProduct")]
-        public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? BadRequest("Данные не валидны") : Created("Объект успешно добавлен",product);
+        public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? CreatedAtAction("Объект успешно добавлен", product) : BadRequest("Данные не валидны");
 
         [HttpPut(Name = "PutProduct")]
-        public IActionResult PutProducts(int Id, Product product) => productService.EditProduct(Id, product) ? BadRequest("Данные не валидны") : Ok("Объект успешно изменён");
-  
+        public IActionResult PutProducts(int Id, Product product) => productService.EditProduct(Id, product) ? Ok("Объект успешно изменён") : BadRequest("Данные не валидны");
+
         [HttpDelete(Name = "DeleteProduct")]
-        public IActionResult DeleteProduct(int Id) => productService.DeleteProduct(Id) ? NotFound("Товара не существует") : Ok("Объект успешно удалён");
-        
-      
+        public IActionResult DeleteProduct(int Id) => productService.DeleteProduct(Id) ? Ok("Объект успешно удалён") : NotFound("Товара не существует");
+
+
     }
 }
