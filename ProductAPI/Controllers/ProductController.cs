@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProductAPI.Models;
 using ProductAPI.Service;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 
 namespace ProductAPI.Controllers
 {
@@ -16,16 +17,18 @@ namespace ProductAPI.Controllers
             this.productService = productService;
         }
 
-        [HttpGet("api/products")]
+        [HttpGet]
         public IEnumerable<Product> Get()
         {
             return productService.GetProducts();
         }
 
-        [HttpGet("api/products/{Id}")]
-        public Product? Get(int Id)
+        [HttpGet("{Id:int}")]
+        public IActionResult? Get(int Id)
         {
-            return productService.GetProductId(Id);
+            var product = productService.GetProductId(Id);
+            return product.Item1 == HttpStatusCode.OK ? Ok(product) : NotFound();
+
         }
         [HttpPost(Name = "PostProduct")]
         public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? CreatedAtAction("Объект успешно добавлен", product) : BadRequest("Данные не валидны");

@@ -33,5 +33,11 @@ namespace TestProduct
             ProductService Test = new ProductService();
             Assert.False(Test.EditProduct(1, null));
         }
+        [Fact]
+        public void Test4()
+        {
+            ProductService Test = new ProductController();
+            Assert.False(Test.G(1, null));
+        }
     }
 }

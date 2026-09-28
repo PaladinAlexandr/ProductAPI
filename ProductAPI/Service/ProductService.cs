@@ -1,5 +1,7 @@
-﻿using ProductAPI.Models;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using ProductAPI.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 namespace ProductAPI.Service
 {
 
@@ -9,31 +11,41 @@ namespace ProductAPI.Service
         public bool AddProduct(Product product);
         public bool DeleteProduct(int Id);
         public bool EditProduct(int Id, Product product);
-        public Product? GetProductId(int Id);
+        public (HttpStatusCode, Product?) GetProductId(int Id);
     }
     public class ProductService : IProductService
     {
-        public Product? GetProductId(int Id)
+        public (HttpStatusCode, Product?) GetProductId(int Id)
         {
-            return Products.FirstOrDefault(x => x.Id == Id);
+            var product = Products.FirstOrDefault(x => x.Id == Id);
+            if (product == null)
+                return (HttpStatusCode.OK, product);
+            else
+                return (HttpStatusCode.NotFound, product);
+
         }
-        public ValidationResult ProductValidate(Product product)
+
+        public class ProductValidationResult
         {
-            if (string.IsNullOrWhiteSpace(product.Name)) return new ValidationResult("Имя не должно быть пустым");
-            //  if (product == null) return new ValidationResult("Объект пустой");
+            public bool Success { get; set; }
+            public List<string> Errors { get; set; } = new List<string>();
+        }
+        public ProductValidationResult ProductValidate(Product product)
+        {
+            var Result = new ProductValidationResult();
+            if (string.IsNullOrWhiteSpace(product.Name)) Result.Errors.Add("Имя не должно быть пустым");
+            if (product == null) Result.Errors.Add("Объект пустой");
             if (product.Price <= 0)
             {
-                return new ValidationResult("Цена должа быть больше нуля");
+                Result.Errors.Add("Цена должа быть больше нуля");
 
             }
             if (product.Stock < 0)
             {
-                return new ValidationResult("Количество на складе не должно быть отрицательным");
+                Result.Errors.Add("Количество на складе не должно быть отрицательным");
             }
-            else
-            {
-                return ValidationResult.Success;
-            }
+            Result.Success = !Result.Errors.Any();
+            return Result;
         }
         public IEnumerable<Product> GetProducts()
         {
@@ -42,37 +54,55 @@ namespace ProductAPI.Service
 
         public bool AddProduct(Product product)
         {
-            if (ProductValidate(product) == ValidationResult.Success)
+            Lock @lock = new();
+            lock (@lock)
             {
-                Products.Add(product);
-                return true;
+                if (ProductValidate(product).Success)
+                {
+                    product.Id = Products.Max(x => x.Id + 1);
+                    Products.Add(product);
+
+                    return true;
+                }
+                return false;
             }
-            return false;
         }
 
         public bool DeleteProduct(int Id)
         {
-            var ProductDelete = Products.Find(x => x.Id == Id);
-            if (ProductDelete != null)
+            Lock @lock = new();
+            lock (@lock)
             {
-                Products.Remove(ProductDelete);
-                return true;
+                var ProductDelete = Products.Find(x => x.Id == Id);
+                if (ProductDelete != null)
+                {
+                    Products.Remove(ProductDelete);
+                    return true;
+                }
+                return false;
             }
-            return false;
+
         }
 
         public bool EditProduct(int Id, Product product)
         {
-            var ProductEdit = Products.Where(p => p.Id == Id).FirstOrDefault();
-            if (ProductEdit != null && ProductValidate(product) == ValidationResult.Success)
+            Lock @lock = new();
+            lock (@lock)
             {
-                ProductEdit = product;
-                return true;
+
+                var ProductEdit = Products.Where(p => p.Id == Id).FirstOrDefault();
+                if (ProductEdit != null && ProductValidate(product).Success)
+                {
+                    ProductEdit.Name = product.Name;
+                    ProductEdit.Price = product.Price;
+                    ProductEdit.Stock = product.Stock;
+                    return true;
+                }
+                return false;
             }
-            return false;
         }
 
-        public List<Product> Products { get; set; } = new()
+        private readonly List<Product> Products = new()
         {
                      new Product
                 {
