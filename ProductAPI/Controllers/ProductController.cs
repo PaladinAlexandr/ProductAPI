@@ -32,7 +32,7 @@ namespace ProductAPI.Controllers
 
         }
         [HttpPost]
-        public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? CreatedAtAction("Объект успешно добавлен", product) : BadRequest("Данные не валидны");
+        public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? CreatedAtAction("Post", "Объект успешно добавлен", product) : BadRequest("Данные не валидны");
 
         [HttpPut]
         public IActionResult PutProducts(int Id, Product product) => productService.EditProduct(Id, product) ? Ok("Объект успешно изменён") : product == null ? NotFound() : BadRequest();

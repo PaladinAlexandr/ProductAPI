@@ -7,8 +7,8 @@ namespace ProductAPI.Service
 
     public interface IProductService
     {
-        
-        public IEnumerable<Product> GetProducts();
+
+        public List<Product> GetProducts();
         public bool AddProduct(Product product);
         public bool DeleteProduct(int Id);
         public bool EditProduct(int Id, Product product);
@@ -20,11 +20,12 @@ namespace ProductAPI.Service
         {
             var product = Products.FirstOrDefault(x => x.Id == Id);
             if (product == null)
-                return (HttpStatusCode.OK, product);
-            else
                 return (HttpStatusCode.NotFound, product);
+            else
+                return (HttpStatusCode.OK, product);
 
         }
+        private readonly Lock _sync = new Lock();
 
         public class ProductValidationResult
         {
@@ -34,29 +35,36 @@ namespace ProductAPI.Service
         public ProductValidationResult ProductValidate(Product product)
         {
             var Result = new ProductValidationResult();
-            if (string.IsNullOrWhiteSpace(product.Name)) Result.Errors.Add("Имя не должно быть пустым");
-            if (product == null) Result.Errors.Add("Объект пустой");
-            if (product.Price <= 0)
+            if (product == null)
+            {
+                Result.Errors.Add("Объект пустой");
+                Result.Success = false;
+                return Result;
+            }
+
+            if (string.IsNullOrWhiteSpace(product?.Name)) Result.Errors.Add("Имя не должно быть пустым");
+
+            if (product?.Price <= 0)
             {
                 Result.Errors.Add("Цена должа быть больше нуля");
 
             }
-            if (product.Stock < 0)
+            if (product?.Stock < 0)
             {
                 Result.Errors.Add("Количество на складе не должно быть отрицательным");
             }
             Result.Success = !Result.Errors.Any();
             return Result;
         }
-        public IEnumerable<Product> GetProducts()
+        public List<Product> GetProducts()
         {
             return Products;
         }
 
         public bool AddProduct(Product product)
         {
-            Lock @lock = new();
-            lock (@lock)
+
+            lock (_sync)
             {
                 if (ProductValidate(product).Success)
                 {
@@ -71,8 +79,8 @@ namespace ProductAPI.Service
 
         public bool DeleteProduct(int Id)
         {
-            Lock @lock = new();
-            lock (@lock)
+
+            lock (_sync)
             {
                 var ProductDelete = Products.Find(x => x.Id == Id);
                 if (ProductDelete != null)
@@ -87,8 +95,8 @@ namespace ProductAPI.Service
 
         public bool EditProduct(int Id, Product product)
         {
-            Lock @lock = new();
-            lock (@lock)
+
+            lock (_sync)
             {
 
                 var ProductEdit = Products.Where(p => p.Id == Id).FirstOrDefault();
