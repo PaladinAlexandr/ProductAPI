@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Validation;
 using ProductAPI.Models;
 using ProductAPI.Service;
 using System.ComponentModel.DataAnnotations;
@@ -30,13 +31,13 @@ namespace ProductAPI.Controllers
             return product.Item1 == HttpStatusCode.OK ? Ok(product) : NotFound();
 
         }
-        [HttpPost(Name = "PostProduct")]
+        [HttpPost]
         public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? CreatedAtAction("Объект успешно добавлен", product) : BadRequest("Данные не валидны");
 
-        [HttpPut(Name = "PutProduct")]
-        public IActionResult PutProducts(int Id, Product product) => productService.EditProduct(Id, product) ? Ok("Объект успешно изменён") : BadRequest("Данные не валидны");
+        [HttpPut]
+        public IActionResult PutProducts(int Id, Product product) => productService.EditProduct(Id, product) ? Ok("Объект успешно изменён") : product == null ? NotFound() : BadRequest();
 
-        [HttpDelete(Name = "DeleteProduct")]
+        [HttpDelete]
         public IActionResult DeleteProduct(int Id) => productService.DeleteProduct(Id) ? Ok("Объект успешно удалён") : NotFound("Товара не существует");
 
 

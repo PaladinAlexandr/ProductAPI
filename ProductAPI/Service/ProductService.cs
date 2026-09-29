@@ -7,6 +7,7 @@ namespace ProductAPI.Service
 
     public interface IProductService
     {
+        
         public IEnumerable<Product> GetProducts();
         public bool AddProduct(Product product);
         public bool DeleteProduct(int Id);
