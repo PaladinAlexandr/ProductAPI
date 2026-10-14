@@ -12,17 +12,25 @@ namespace ProductAPI.Service
         public bool AddProduct(Product product);
         public bool DeleteProduct(int Id);
         public bool EditProduct(int Id, Product product);
-        public (HttpStatusCode, Product?) GetProductId(int Id);
+        public Result<Product> GetProductId(int Id);
+    }
+    public class Result<T>
+    {
+        public bool Success { get; set; }
+        public T Value { get; set; }
+        public string Error { get; set; }
+
     }
     public class ProductService : IProductService
     {
-        public (HttpStatusCode, Product?) GetProductId(int Id)
+
+        public Result<Product> GetProductId(int Id)
         {
             var product = Products.FirstOrDefault(x => x.Id == Id);
             if (product == null)
-                return (HttpStatusCode.NotFound, product);
+                return new Result<Product> { Success = false, Value = product, Error = "товар не найден" };
             else
-                return (HttpStatusCode.OK, product);
+                return new Result<Product> { Success = true, Value = product };
 
         }
         private readonly Lock _sync = new Lock();
@@ -34,6 +42,8 @@ namespace ProductAPI.Service
         }
         public ProductValidationResult ProductValidate(Product product)
         {
+
+
             var Result = new ProductValidationResult();
             if (product == null)
             {

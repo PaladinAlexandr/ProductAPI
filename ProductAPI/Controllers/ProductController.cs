@@ -28,7 +28,7 @@ namespace ProductAPI.Controllers
         public IActionResult? Get(int Id)
         {
             var product = productService.GetProductId(Id);
-            return product.Item1 == HttpStatusCode.OK ? Ok(product) : NotFound();
+            return product.Success ? Ok(product) : NotFound();
 
         }
         [HttpPost]
