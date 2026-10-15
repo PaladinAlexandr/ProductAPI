@@ -62,7 +62,7 @@ namespace TestProduct
                     Stock = new Random().Next(1, 100)
                 };
             })).ToArray();
-            Task results = Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
         }
         [Fact]
         public void Test4()
