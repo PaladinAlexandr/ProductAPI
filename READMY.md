@@ -1,1 +1,1 @@
-Scoped lifetime для IProductService, т.к. он используется в рамках жизни контроллера, создаваемого при каждом запросе в endpoint
+Singletone lifetime для IProductService 
