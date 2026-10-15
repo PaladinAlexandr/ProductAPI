@@ -31,7 +31,7 @@ namespace ProductAPI.Controllers
             IActionResult actionResult = result.Type switch
             {
                 TypeError.Success => Ok(result.Value),
-                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.ValidationError => BadRequest(result.Errors),
                 TypeError.NotFound => NotFound(result.Value),
                 TypeError.Conflict => Conflict(result.Value),
             };
@@ -44,22 +44,22 @@ namespace ProductAPI.Controllers
             var result = productService.AddProduct(product);
             IActionResult actionResult = result.Type switch
             {
-                TypeError.Success => Ok(result.Value),
-                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.Success => CreatedAtAction(nameof(Get), new { id = result.Value.Id }, result.Value),
+                TypeError.ValidationError => BadRequest(result.Errors),
                 TypeError.NotFound => NotFound(result.Value),
                 TypeError.Conflict => Conflict(result.Value),
             };
             return actionResult;
         }
 
-        [HttpPut]
+        [HttpPut("{id:int}")]
         public IActionResult PutProducts(int Id, Product product)
         {
             var result = productService.EditProduct(Id, product);
             IActionResult actionResult = result.Type switch
             {
                 TypeError.Success => Ok(result.Value),
-                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.ValidationError => BadRequest(result.Errors),
                 TypeError.NotFound => NotFound(result.Value),
                 TypeError.Conflict => Conflict(result.Value),
             };
@@ -67,13 +67,14 @@ namespace ProductAPI.Controllers
         }
 
 
-        [HttpDelete]
-        public IActionResult DeleteProduct(int Id) {
+        [HttpDelete("{id:int}")]
+        public IActionResult DeleteProduct(int Id)
+        {
             var result = productService.DeleteProduct(Id);
             IActionResult actionResult = result.Type switch
             {
                 TypeError.Success => Ok(result.Value),
-                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.ValidationError => BadRequest(result.Errors),
                 TypeError.NotFound => NotFound(result.Value),
                 TypeError.Conflict => Conflict(result.Value),
             };

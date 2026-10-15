@@ -40,24 +40,29 @@ namespace ProductAPI.Service
         {
             this.Success = Success;
             this.Value = value;
+            this.Type = Type;
         }
         public Result() { }
-      
+
 
     }
     public class ProductService : IProductService
     {
+        private readonly Lock _sync = new Lock();
 
         public Result<Product> GetProductId(int Id)
         {
-            var product = Products.FirstOrDefault(x => x.Id == Id);
-            if (product == null)
-                return new Result<Product>(false, product, "товар не найден", TypeError.NotFound);
-            else
-                return new Result<Product>(true, product, TypeError.Success);
+            lock (_sync)
+            {
+                var product = Products.FirstOrDefault(x => x.Id == Id);
+                if (product == null)
+                    return new Result<Product>(false, product, "товар не найден", TypeError.NotFound);
+                else
+                    return new Result<Product>(true, product, TypeError.Success);
+            }
+
 
         }
-        private readonly Lock _sync = new Lock();
 
 
         public Result<Product> ProductValidate(Product product)
@@ -80,12 +85,13 @@ namespace ProductAPI.Service
 
             Result.Success = !Result.Errors.Any();
             if (Result.Success)
-                Result.Type =TypeError.Success;
+                Result.Type = TypeError.Success;
             return Result;
         }
         public IEnumerable<Product> GetProducts()
         {
-            return Products.ToArray();
+            lock (_sync)
+                return Products.ToArray();
         }
 
         public Result<Product> AddProduct(Product product)
@@ -96,8 +102,12 @@ namespace ProductAPI.Service
                 var result = ProductValidate(product);
                 if (result.Success)
                 {
-                    product.Id = ++Product.IdAll;
-                    Products.Add(product);
+                    lock (_sync)
+                    {
+                       
+                        product.Id = ++Product.IdAll;
+                        Products.Add(product);
+                    }
                 }
                 return result;
             }
@@ -109,11 +119,10 @@ namespace ProductAPI.Service
             lock (_sync)
             {
                 var ProductDelete = Products.Find(x => x.Id == Id);
-                if (ProductDelete != null)
-                {
-                    Products.Remove(ProductDelete);
-                    return new Result<Product>(false, ProductDelete, "Пустой объект",TypeError.NotFound);
-                }
+                if (ProductDelete == null)
+                    return new Result<Product>(false, ProductDelete, "Пустой объект", TypeError.NotFound);
+
+                Products.Remove(ProductDelete);
                 return new Result<Product>(true, ProductDelete, TypeError.Success);
             }
 
