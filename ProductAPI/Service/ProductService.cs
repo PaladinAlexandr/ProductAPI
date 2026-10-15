@@ -48,6 +48,11 @@ namespace ProductAPI.Service
     }
     public class ProductService : IProductService
     {
+        private int _lastId = 3;
+        public int GetNextId()
+        {
+            return Interlocked.Increment(ref _lastId);
+        }
         private readonly Lock _sync = new Lock();
 
         public Result<Product> GetProductId(int Id)
@@ -102,12 +107,11 @@ namespace ProductAPI.Service
                 var result = ProductValidate(product);
                 if (result.Success)
                 {
-                    lock (_sync)
-                    {
-                       
-                        product.Id = ++Product.IdAll;
-                        Products.Add(product);
-                    }
+
+
+                    product.Id = GetNextId();
+                    Products.Add(product);
+
                 }
                 return result;
             }

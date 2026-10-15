@@ -19,13 +19,13 @@ namespace ProductAPI.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<Product> Get()
+        public IEnumerable<Product> GetAll()
         {
             return productService.GetProducts();
         }
 
         [HttpGet("{Id:int}")]
-        public IActionResult? Get(int Id)
+        public IActionResult? GetById(int Id)
         {
             var result = productService.GetProductId(Id);
             IActionResult actionResult = result.Type switch
@@ -44,7 +44,7 @@ namespace ProductAPI.Controllers
             var result = productService.AddProduct(product);
             IActionResult actionResult = result.Type switch
             {
-                TypeError.Success => CreatedAtAction(nameof(Get), new { id = result.Value.Id }, result.Value),
+                TypeError.Success => CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value),
                 TypeError.ValidationError => BadRequest(result.Errors),
                 TypeError.NotFound => NotFound(result.Value),
                 TypeError.Conflict => Conflict(result.Value),
