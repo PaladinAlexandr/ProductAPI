@@ -49,7 +49,7 @@ namespace ProductAPI.Service
     public class ProductService : IProductService
     {
         private int _lastId = 3;
-        public int GetNextId()
+        private int GetNextId()
         {
             return Interlocked.Increment(ref _lastId);
         }
@@ -101,20 +101,17 @@ namespace ProductAPI.Service
 
         public Result<Product> AddProduct(Product product)
         {
-
-            lock (_sync)
+            var result = ProductValidate(product);
+            if (result.Success)
             {
-                var result = ProductValidate(product);
-                if (result.Success)
-                {
 
 
-                    product.Id = GetNextId();
-                    Products.Add(product);
+                product.Id = GetNextId();
+                Products.Add(product);
 
-                }
-                return result;
             }
+            return result;
+
         }
 
         public Result<Product> DeleteProduct(int Id)

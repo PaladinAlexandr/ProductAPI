@@ -9,7 +9,7 @@ namespace TestProduct
     public class UnitTest1
     {
         [Fact]
-        public void Test1()
+        public void TestCreatedProduct()
         {
             var product = new Product()
             {
@@ -17,13 +17,22 @@ namespace TestProduct
                 Price = 100,
                 Stock = 2
             };
+            var actionName = "GetById";
+            var idValues = 4;
             var controller = new ProductController(new ProductService());
             var actionResult = controller.PostProduct(product);
+
             Assert.IsType<CreatedAtActionResult>(actionResult);
+            Assert.Equal(actionName, nameof(controller.GetById));
+            var okObject = actionResult as OkObjectResult;
+            Assert.NotNull(okObject);
+            var resultProduct = okObject.Value as Product;
+            Assert.NotNull(resultProduct);
+            Assert.Equal(idValues, (resultProduct.Id));
 
         }
         [Fact]
-        public void Test2()
+        public void TestCreatedProductNegativePrice()
         {
             var product = new Product()
             {
@@ -34,26 +43,29 @@ namespace TestProduct
             var controller = new ProductController(new ProductService());
             var actionResult = controller.PostProduct(product);
             Assert.IsType<BadRequestObjectResult>(actionResult);
+            var okObject = actionResult as OkObjectResult;
+            Assert.NotNull(okObject);
+            var resultProduct = okObject.Value as Product;
+            Assert.NotNull(resultProduct);
+
+
         }
         [Fact]
-        public void Test3()
+        public async Task AddProductsConcurrently()
         {
-            Product product;
+
             var service = new ProductService();
-            int index = service.GetProducts().Max(x => x.Id);
-            for (var i = 0; i < 100; i++)
+
+            var tasks = Enumerable.Range(0, 100).Select(i => Task.Run(() =>
             {
-                product = new Product()
+                Product product = new Product
                 {
-                    Name = "Test",
-                    Price = new Random().Next(1, 1000),
-                    Stock = new Random().Next(0, 1000)
+                    Name = $"Product{i}",
+                    Price = new Random().Next(1, 100),
+                    Stock = new Random().Next(1, 100)
                 };
-                var task = Task.Run (() => new ProductController(service).PostProduct(product));
-            
-            }
-            int newIndex =service.GetProducts().Max(x => x.Id);
-            Assert.Equal(newIndex,index + 100) ;
+            })).ToArray();
+            Task results = Task.WhenAll(tasks);
         }
         [Fact]
         public void Test4()

@@ -48,6 +48,7 @@ namespace ProductAPI.Controllers
                 TypeError.ValidationError => BadRequest(result.Errors),
                 TypeError.NotFound => NotFound(result.Value),
                 TypeError.Conflict => Conflict(result.Value),
+                _ => NoContent()
             };
             return actionResult;
         }
