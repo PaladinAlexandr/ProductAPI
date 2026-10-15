@@ -27,18 +27,58 @@ namespace ProductAPI.Controllers
         [HttpGet("{Id:int}")]
         public IActionResult? Get(int Id)
         {
-            var product = productService.GetProductId(Id);
-            return product.Success ? Ok(product) : NotFound();
+            var result = productService.GetProductId(Id);
+            IActionResult actionResult = result.Type switch
+            {
+                TypeError.Success => Ok(result.Value),
+                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.NotFound => NotFound(result.Value),
+                TypeError.Conflict => Conflict(result.Value),
+            };
+            return actionResult;
 
         }
         [HttpPost]
-        public IActionResult PostProduct(Product product) => productService.AddProduct(product) ? CreatedAtAction("Post", "Объект успешно добавлен", product) : BadRequest("Данные не валидны");
+        public IActionResult PostProduct(Product product)
+        {
+            var result = productService.AddProduct(product);
+            IActionResult actionResult = result.Type switch
+            {
+                TypeError.Success => Ok(result.Value),
+                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.NotFound => NotFound(result.Value),
+                TypeError.Conflict => Conflict(result.Value),
+            };
+            return actionResult;
+        }
 
         [HttpPut]
-        public IActionResult PutProducts(int Id, Product product) => productService.EditProduct(Id, product) ? Ok("Объект успешно изменён") : product == null ? NotFound() : BadRequest();
+        public IActionResult PutProducts(int Id, Product product)
+        {
+            var result = productService.EditProduct(Id, product);
+            IActionResult actionResult = result.Type switch
+            {
+                TypeError.Success => Ok(result.Value),
+                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.NotFound => NotFound(result.Value),
+                TypeError.Conflict => Conflict(result.Value),
+            };
+            return actionResult;
+        }
+
 
         [HttpDelete]
-        public IActionResult DeleteProduct(int Id) => productService.DeleteProduct(Id) ? Ok("Объект успешно удалён") : NotFound("Товара не существует");
+        public IActionResult DeleteProduct(int Id) {
+            var result = productService.DeleteProduct(Id);
+            IActionResult actionResult = result.Type switch
+            {
+                TypeError.Success => Ok(result.Value),
+                TypeError.ValidationError => Conflict(result.Value),
+                TypeError.NotFound => NotFound(result.Value),
+                TypeError.Conflict => Conflict(result.Value),
+            };
+            return actionResult;
+        }
 
 
     }

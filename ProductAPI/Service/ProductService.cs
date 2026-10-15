@@ -8,17 +8,41 @@ namespace ProductAPI.Service
     public interface IProductService
     {
 
-        public List<Product> GetProducts();
-        public bool AddProduct(Product product);
-        public bool DeleteProduct(int Id);
-        public bool EditProduct(int Id, Product product);
+        public IEnumerable<Product> GetProducts();
+        public Result<Product> AddProduct(Product product);
+        public Result<Product> DeleteProduct(int Id);
+        public Result<Product> EditProduct(int Id, Product product);
         public Result<Product> GetProductId(int Id);
+    }
+    public enum TypeError
+    {
+        Success,
+        ValidationError,
+        NotFound,
+        Conflict
     }
     public class Result<T>
     {
         public bool Success { get; set; }
         public T Value { get; set; }
-        public string Error { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
+        public TypeError Type { get; set; }
+
+        public Result(bool Success, T value, string Error, TypeError Type)
+        {
+            this.Success = Success;
+            this.Value = value;
+            if (Error != null)
+                Errors.Add(Error);
+            this.Type = Type;
+        }
+        public Result(bool Success, T value, TypeError Type)
+        {
+            this.Success = Success;
+            this.Value = value;
+        }
+        public Result() { }
+      
 
     }
     public class ProductService : IProductService
@@ -28,66 +52,58 @@ namespace ProductAPI.Service
         {
             var product = Products.FirstOrDefault(x => x.Id == Id);
             if (product == null)
-                return new Result<Product> { Success = false, Value = product, Error = "товар не найден" };
+                return new Result<Product>(false, product, "товар не найден", TypeError.NotFound);
             else
-                return new Result<Product> { Success = true, Value = product };
+                return new Result<Product>(true, product, TypeError.Success);
 
         }
         private readonly Lock _sync = new Lock();
 
-        public class ProductValidationResult
-        {
-            public bool Success { get; set; }
-            public List<string> Errors { get; set; } = new List<string>();
-        }
-        public ProductValidationResult ProductValidate(Product product)
+
+        public Result<Product> ProductValidate(Product product)
         {
 
 
-            var Result = new ProductValidationResult();
+            var Result = new Result<Product>();
+            Result.Value = product;
+            Result.Success = false;
+            Result.Type = TypeError.ValidationError;
             if (product == null)
-            {
                 Result.Errors.Add("Объект пустой");
-                Result.Success = false;
-                return Result;
-            }
-
-            if (string.IsNullOrWhiteSpace(product?.Name)) Result.Errors.Add("Имя не должно быть пустым");
-
+            if (string.IsNullOrWhiteSpace(product?.Name))
+                Result.Errors.Add("Имя не должно быть пустым");
             if (product?.Price <= 0)
-            {
                 Result.Errors.Add("Цена должа быть больше нуля");
-
-            }
             if (product?.Stock < 0)
-            {
                 Result.Errors.Add("Количество на складе не должно быть отрицательным");
-            }
+
+
             Result.Success = !Result.Errors.Any();
+            if (Result.Success)
+                Result.Type =TypeError.Success;
             return Result;
         }
-        public List<Product> GetProducts()
+        public IEnumerable<Product> GetProducts()
         {
-            return Products;
+            return Products.ToArray();
         }
 
-        public bool AddProduct(Product product)
+        public Result<Product> AddProduct(Product product)
         {
 
             lock (_sync)
             {
-                if (ProductValidate(product).Success)
+                var result = ProductValidate(product);
+                if (result.Success)
                 {
-                    product.Id = Products.Max(x => x.Id + 1);
+                    product.Id = ++Product.IdAll;
                     Products.Add(product);
-
-                    return true;
                 }
-                return false;
+                return result;
             }
         }
 
-        public bool DeleteProduct(int Id)
+        public Result<Product> DeleteProduct(int Id)
         {
 
             lock (_sync)
@@ -96,28 +112,36 @@ namespace ProductAPI.Service
                 if (ProductDelete != null)
                 {
                     Products.Remove(ProductDelete);
-                    return true;
+                    return new Result<Product>(false, ProductDelete, "Пустой объект",TypeError.NotFound);
                 }
-                return false;
+                return new Result<Product>(true, ProductDelete, TypeError.Success);
             }
 
         }
 
-        public bool EditProduct(int Id, Product product)
+        public Result<Product> EditProduct(int Id, Product product)
         {
-
+            Result<Product> result = new();
+            result.Value = product;
             lock (_sync)
             {
 
                 var ProductEdit = Products.Where(p => p.Id == Id).FirstOrDefault();
-                if (ProductEdit != null && ProductValidate(product).Success)
+                if (ProductEdit == null)
                 {
-                    ProductEdit.Name = product.Name;
-                    ProductEdit.Price = product.Price;
-                    ProductEdit.Stock = product.Stock;
-                    return true;
+                    result = new(false, product, "Объект не найден", TypeError.NotFound);
+                    return result;
                 }
-                return false;
+                result = ProductValidate(product);
+                if (result.Success == false) return result;
+
+
+                ProductEdit.Name = product.Name;
+                ProductEdit.Price = product.Price;
+                ProductEdit.Stock = product.Stock;
+                result = new(true, product, TypeError.Success);
+                return result;
+
             }
         }
 
