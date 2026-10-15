@@ -24,7 +24,7 @@ namespace TestProduct
 
             Assert.IsType<CreatedAtActionResult>(actionResult);
             Assert.Equal(actionName, nameof(controller.GetById));
-            var okObject = actionResult as OkObjectResult;
+            var okObject = actionResult as CreatedAtActionResult;
             Assert.NotNull(okObject);
             var resultProduct = okObject.Value as Product;
             Assert.NotNull(resultProduct);
@@ -42,12 +42,9 @@ namespace TestProduct
             };
             var controller = new ProductController(new ProductService());
             var actionResult = controller.PostProduct(product);
-            Assert.IsType<BadRequestObjectResult>(actionResult);
-            var okObject = actionResult as OkObjectResult;
-            Assert.NotNull(okObject);
-            var resultProduct = okObject.Value as Product;
-            Assert.NotNull(resultProduct);
-
+            var badRequest = Assert.IsType<BadRequestObjectResult>(actionResult);
+            var errors = Assert.IsType<List<string>>(badRequest.Value);
+            Assert.Contains("Цена должа быть больше нуля", errors);
 
         }
         [Fact]

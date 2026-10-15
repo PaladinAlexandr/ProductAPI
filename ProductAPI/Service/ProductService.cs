@@ -106,13 +106,17 @@ namespace ProductAPI.Service
             {
 
 
-                product.Id = GetNextId();
-                Products.Add(product);
-
+                lock (_sync)
+                {
+                    product.Id = GetNextId();
+                    Products.Add(product);
+                }
             }
-            return result;
 
+            return result;
         }
+
+
 
         public Result<Product> DeleteProduct(int Id)
         {
